@@ -199,7 +199,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
       <section class="section" id="hot">
         <div class="card">
           <div class="head-row">
-            <h2 style="margin:0"><span class="bar"></span>今日可跟拍热点（<span id="hotDate">2026-11-11</span>，已剔敏感类）</h2>
+            <h2 style="margin:0"><span class="bar"></span>今日可跟拍热点（<span id="hotDate">2026-11-11</span>，已剔敏感类）<span id="hotSrc" class="muted" style="font-size:12px;margin-left:8px"></span></h2>
             <div style="display:flex;gap:8px">
               <button class="btn sm" id="hotRefreshBtn">🔄 手动刷新</button>
               <button class="btn ai sm" id="hotAutoBtn">⚡ 自动刷新</button>
@@ -207,7 +207,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
             </div>
           </div>
           <div id="hotToday"></div>
-          <div class="note">点每张卡片的「📌 收藏到热点库」即可加入下方热点库（默认状态：待拍），今天不拍的改天接着拍也没问题。点「⚡ 自动刷新」会用你配置的 AI 一键抓取并直接更新本页（无需复制粘贴）；若想走指令流程，点「🔄 手动刷新」生成指令，发到对话框让我抓最新热点，再把回给你的 JSON 粘进弹窗即可。<span id="hotAutoTime" class="muted" style="font-size:12px"></span></div>
+          <div class="note">本页默认加载「红狐Hub 真实抖音热榜」（每日自动化更新，已剔敏感类），打开即最新，标题右侧显示"更新于"时间。点每张卡片的「📌 收藏到热点库」即可加入下方热点库（默认状态：待拍），今天不拍的改天接着拍也没问题。点「⚡ 自动刷新」会用你配置的 AI 生成补充候选（非真实榜，当灵感库）；若想走指令流程，点「🔄 手动刷新」生成指令，发到对话框让我抓最新热点，再把回给你的 JSON 粘进弹窗即可。<span id="hotAutoTime" class="muted" style="font-size:12px"></span></div>
         </div>
         <div class="card">
           <div class="head-row">
@@ -460,12 +460,20 @@ function renderDocs(){
   let h="";DOCS.forEach(d=>{h+=`<tr><td>${d.t}</td><td><a class="link" href="${d.u}" target="_blank">打开</a></td></tr>`;});
   $("#docBody").innerHTML=h;
 }
-function renderHotToday(){
+function renderHotToday(data){
+  if(!data)data=loadHotToday();
   let h="";
-  const d=loadHotToday();const hd=$("#hotDate");if(hd)hd.textContent=d.date;d.list.forEach(x=>{
-    h+=`<div class="hot-item"><div class="h">${x.title} <span class="star">${"★".repeat(x.star)}</span></div><div class="muted">${x.heat}</div><div style="margin-top:8px"><button class="btn sm" onclick="addHot('${x.title.replace(/'/g,"\\'")}','${x.type.replace(/'/g,"\\'")}','${x.heat.replace(/'/g,"\\'")}',${x.star})">📌 收藏到热点库</button></div></div>`;
+  const d=data;const hd=$("#hotDate");if(hd)hd.textContent=d.date;d.list.forEach(x=>{
+    h+=`<div class="hot-item"><div class="h">${x.title} <span class="star">${"★".repeat(x.star||0)}</span></div><div class="muted">${x.heat||""}</div><div style="margin-top:8px"><button class="btn sm" onclick="addHot('${x.title.replace(/'/g,"\\'")}','${x.type.replace(/'/g,"\\'")}','${(x.heat||"").replace(/'/g,"\\'")}',${x.star||0})">📌 收藏到热点库</button></div></div>`;
   });
   $("#hotToday").innerHTML=h;
+}
+async function initHotToday(){
+  try{
+    const r=await fetch("hotspots.json?v="+Date.now(),{cache:"no-store"});
+    if(r.ok){const j=await r.json();if(j&&j.list&&j.list.length){saveHotToday(j);renderHotToday(j);const s=$("#hotSrc");if(s)s.textContent="红狐Hub实时 · 更新于 "+j.date+(j.time?" "+j.time:"");return;}}
+  }catch(e){/* 离线或 file:// 打开，走回退 */}
+  renderHotToday(loadHotToday());const s=$("#hotSrc");if(s)s.textContent="本地缓存（离线/数据文件未加载）";
 }
 
 // ---------- 热点库 ----------
@@ -677,7 +685,7 @@ document.querySelectorAll(".nav a").forEach(a=>a.onclick=()=>{
 $("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("collapsed");
 
 // ---------- 初始化 ----------
-renderOverview();renderPipe();renderDocs();renderHotToday();renderHotLib();renderHotRefreshTime();
+renderOverview();renderPipe();renderDocs();initHotToday();renderHotLib();renderHotRefreshTime();
 renderInv();
 renderExpTabs();renderExpForm();renderExpList();
 renderReviews();bindReview();renderGuide("shoot");updateHotStat();initChat();
