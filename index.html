@@ -107,6 +107,13 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
 .modal h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .modal textarea{width:100%;height:150px;resize:vertical;font-size:13px;line-height:1.7}
 .modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+/* toast 轻提示 */
+#toastBox{position:fixed;right:18px;bottom:18px;z-index:999;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none}
+.toast{background:#1f2937;color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;box-shadow:0 6px 20px rgba(0,0,0,.18);opacity:0;transform:translateY(10px);transition:all .35s;max-width:340px}
+.toast.show{opacity:1;transform:none}
+.toast.ok{background:#16a34a}
+.toast.warn{background:#d97706}
+.toast.err{background:#dc2626}
 </style>
 </head>
 <body>
@@ -137,7 +144,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
       <!-- 概览 -->
       <section class="section active" id="overview">
         <div class="grid c3">
-          <div class="stat"><div class="v red">6/7</div><div class="l">已完成步骤（第7步待积累数据）</div></div>
+          <div class="stat"><div class="v red">7/7</div><div class="l">已完成步骤（第7步草案已出，待数据校准）</div></div>
           <div class="stat"><div class="v" id="ov_hotcnt">0</div><div class="l">热点库待拍/拍摄中条目</div></div>
           <div class="stat"><div class="v">2</div><div class="l">每日自动化（素材同步 + 热点匹配）</div></div>
         </div>
@@ -303,6 +310,8 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
           <div class="head-row">
             <h2 style="margin:0"><span class="bar"></span>AI 对话（抖音创作助手）</h2>
             <button class="btn ghost sm" id="chatSettingsBtn">⚙️ 设置 / 接入</button>
+            <button class="btn ghost sm" id="cs_clear">🗑 清空对话</button>
+            <span id="cfgSaved" style="display:none;color:#16a34a;font-size:13px;font-weight:600">✓ 已保存（仅本机）</span>
           </div>
           <div id="chatSettings" style="display:none;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;background:#fafbfc">
             <div class="row">
@@ -321,7 +330,7 @@ label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
               <div><label>模型名</label><input id="cs_model" placeholder="deepseek-chat"></div>
             </div>
             <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="cs_ctx" style="width:auto;margin:0"> 对话时附带工作台数据（热点库/经验库/复盘）</label>
-            <div style="margin-top:10px"><button class="btn sm" id="cs_save">保存设置</button> <button class="btn ghost sm" id="cs_clear">清空对话</button></div>
+            <div style="margin-top:10px"><button class="btn sm" id="cs_save">保存设置</button></div>
             <div class="note blue" style="margin-top:10px">密钥只存在你本机浏览器 localStorage，不会上传到除所选服务商外的任何地方；请勿把本 HTML 分享给他人。若双击打开(file://)调用被 CORS 拦截，可在文件目录运行 <code>python -m http.server</code> 后访问 http://127.0.0.1:8000/抖音运营工作台.html</div>
           </div>
           <div id="chatBox" style="border:1px solid var(--line);border-radius:10px;padding:14px;height:380px;overflow:auto;background:#fafbfc;margin-bottom:12px"></div>
@@ -362,7 +371,7 @@ const STEPS=[
   {n:4,t:"侵权违规检查 + 风险声明",s:"ok",who:"文案合规审核专家",doc:"第4步"},
   {n:5,t:"钩子/涨粉/回评痛点分析",s:"ok",who:"剪辑钩子专家(复用)",doc:"第5步"},
   {n:6,t:"次日数据复盘 + 经验库",s:"ok",who:"数据复盘报表专家 + 本工作台",doc:"第6步"},
-  {n:7,t:"推导创作路线",s:"pending",who:"助手综合经验库",doc:"待做"},
+  {n:7,t:"推导创作路线",s:"ok",who:"助手综合经验库",doc:"草案v0.1 已出"},
 ];
 const PIPE=[
   {n:1,t:"素材同步",m:"网盘素材库 + 每日 09:00 同步自动化",s:"ok",doc:"总方案"},
@@ -371,7 +380,7 @@ const PIPE=[
   {n:4,t:"合规声明",m:"逐句审 + 侵权/肖像/版权排查",s:"ok",doc:"第4步"},
   {n:5,t:"钩子/涨粉/回评",m:"钩子设计 + 涨粉触发 + 回复策略",s:"ok",doc:"第5步"},
   {n:6,t:"数据复盘",m:"次日指标 + 经验库 5 库沉淀",s:"ok",doc:"第6步"},
-  {n:7,t:"创作路线",m:"汇总经验库推人设/选题/节奏",s:"pending",doc:"待做"},
+  {n:7,t:"创作路线",m:"汇总经验库推人设/选题/节奏",s:"ok",doc:"草案v0.1 已出"},
 ];
 const DOCS=[
   {t:"总方案（7步闭环·按人分块）",u:"https://www.workbuddy.cn/space/d/oyp4JnFiX4IjGXIvYBP4W9"},
@@ -465,9 +474,9 @@ function loadHotLib(){return load("dy_hotlib");}
 function saveHotLib(a){save("dy_hotlib",a);updateHotStat();}
 function addHot(title,type,heat,star){
   const a=loadHotLib();
-  if(a.some(x=>x.title===title)){alert("已在热点库中："+title);return;}
+  if(a.some(x=>x.title===title)){toast("已在热点库中："+title,"warn");return;}
   a.unshift({id:Date.now(),date:new Date().toISOString().slice(0,10),title,type,heat,star:star||0,status:"todo",note:""});
-  saveHotLib(a);renderHotLib();
+  saveHotLib(a);renderHotLib();toast("📌 已收藏到热点库");
 }
 function renderHotLib(){
   const a=loadHotLib();
@@ -484,9 +493,9 @@ function renderHotLib(){
   });
   h+="</tbody></table>";$("#hotlibList").innerHTML=h;
 }
-function setHotStatus(id,v){const a=loadHotLib();const o=a.find(x=>x.id===id);if(o){o.status=v;saveHotLib(a);renderHotLib();}}
+function setHotStatus(id,v){const a=loadHotLib();const o=a.find(x=>x.id===id);if(o){o.status=v;saveHotLib(a);renderHotLib();toast("状态已更新："+STATUS[v].t);}}
 function setHotNote(id,v){const a=loadHotLib();const o=a.find(x=>x.id===id);if(o){o.note=v;saveHotLib(a);}}
-function delHot(id){saveHotLib(loadHotLib().filter(x=>x.id!==id));renderHotLib();}
+function delHot(id){saveHotLib(loadHotLib().filter(x=>x.id!==id));renderHotLib();toast("已删除热点");}
 function updateHotStat(){const a=loadHotLib();const n=a.filter(x=>x.status==="todo"||x.status==="doing").length;$("#ov_hotcnt").textContent=n;}
 
 // ---------- 素材盘点（手动） ----------
@@ -506,7 +515,7 @@ function renderInv(){
     inp.onchange=()=>{const a2=loadInv();a2[+inp.dataset.i].cnt=inp.value;save("dy_inv",a2);};
   });
 }
-$("#inv_save").onclick=()=>{$("#invBody").querySelectorAll("input").forEach(inp=>{const a2=loadInv();a2[+inp.dataset.i].cnt=inp.value;save("dy_inv",a2);});alert("已保存到本机浏览器");};
+$("#inv_save").onclick=()=>{$("#invBody").querySelectorAll("input").forEach(inp=>{const a2=loadInv();a2[+inp.dataset.i].cnt=inp.value;save("dy_inv",a2);});toast("✓ 素材盘点已保存");};
 
 // ---------- 经验库 ----------
 let curExp="hot";
@@ -524,8 +533,8 @@ function renderExpForm(){
   $("#ef_add").onclick=()=>{
     const inp=$("#expForm").querySelectorAll(".ef");const o={id:Date.now()};
     inp.forEach(i=>o[i.dataset.f]=i.value);
-    if(!Object.values(o).some(v=>v && v!==o.id)){alert("请至少填一项");return;}
-    const arr=load(expKey(curExp));arr.unshift(o);save(expKey(curExp),arr);renderExpForm();renderExpList();
+    if(!Object.values(o).some(v=>v && v!==o.id)){toast("请至少填一项","warn");return;}
+    const arr=load(expKey(curExp));arr.unshift(o);save(expKey(curExp),arr);renderExpForm();renderExpList();toast("✓ 已添加到「"+EXP_CFG[curExp].name+"」");
   };
 }
 function renderExpList(){
@@ -536,7 +545,7 @@ function renderExpList(){
   arr.forEach(o=>{h+="<tr>";cfg.fields.forEach(f=>h+=`<td>${o[f]||""}</td>`);h+=`<td><button class="btn sm" onclick="delExp('${curExp}',${o.id})">删</button></td></tr>`;});
   h+="</tbody></table>";$("#expList").innerHTML=h;
 }
-function delExp(k,id){const arr=load(expKey(k)).filter(x=>x.id!==id);save(expKey(k),arr);renderExpForm();renderExpList();}
+function delExp(k,id){const arr=load(expKey(k)).filter(x=>x.id!==id);save(expKey(k),arr);renderExpForm();renderExpList();toast("已删除一条");}
 
 // ---------- 数据复盘 ----------
 function renderReviews(){
@@ -550,7 +559,7 @@ function renderReviews(){
   });
   h+="</tbody></table>";$("#reviewList").innerHTML=h;
 }
-function delReview(id){save("dy_reviews",load("dy_reviews").filter(x=>x.id!==id));renderReviews();}
+function delReview(id){save("dy_reviews",load("dy_reviews").filter(x=>x.id!==id));renderReviews();toast("已删除复盘");}
 function bindReview(){
   $("#r_submit").onclick=()=>{
     const r={id:Date.now(),date:$("#r_date").value,theme:$("#r_theme").value,play:$("#r_play").value,finish:$("#r_finish").value,like:$("#r_like").value,cmt:$("#r_cmt").value,share:$("#r_share").value,follow:$("#r_follow").value,best:$("#r_best").value,drop:$("#r_drop").value,pit:$("#r_pit").value,imp:$("#r_imp").value};
@@ -560,9 +569,9 @@ function bindReview(){
     const arr=load("dy_reviews");arr.unshift(r);save("dy_reviews",arr);
     $("#r_calc").style.display="block";
     $("#r_calc").innerHTML=`已保存。互动率 <b>${inter}</b> ｜ 涨粉率 <b>${folw}</b>（互动率&gt;5% 优秀，涨粉率&gt;1% 优质）。`;
-    renderReviews();
+    renderReviews();toast("✓ 复盘已保存");
   };
-  $("#r_clear").onclick=()=>{["r_date","r_theme","r_play","r_finish","r_like","r_cmt","r_share","r_follow","r_best","r_drop","r_pit","r_imp"].forEach(i=>$("#"+i).value="");$("#r_calc").style.display="none";};
+  $("#r_clear").onclick=()=>{["r_date","r_theme","r_play","r_finish","r_like","r_cmt","r_share","r_follow","r_best","r_drop","r_pit","r_imp"].forEach(i=>$("#"+i).value="");$("#r_calc").style.display="none";toast("已清空表单");};
 }
 
 // ---------- AI 对话 ----------
@@ -636,8 +645,8 @@ function initChat(){
   renderChat();
   $("#chatSettingsBtn").onclick=()=>{const el=$("#chatSettings");el.style.display=el.style.display==="none"?"block":"none";};
   $("#cs_preset").onchange=function(){const p=CHAT_PRESETS[this.value];if(p){$("#cs_base").value=p.base;$("#cs_model").value=p.model;}};
-  $("#cs_save").onclick=()=>{const c={base:$("#cs_base").value.trim(),key:$("#cs_key").value.trim(),model:$("#cs_model").value.trim(),ctx:$("#cs_ctx").checked};saveChatCfg(c);alert("已保存（仅本机）");};
-  $("#cs_clear").onclick=()=>{if(confirm("清空所有对话记录？")){saveChatHist([]);renderChat();}};
+  $("#cs_save").onclick=()=>{const c={base:$("#cs_base").value.trim(),key:$("#cs_key").value.trim(),model:$("#cs_model").value.trim(),ctx:$("#cs_ctx").checked};saveChatCfg(c);$("#chatSettings").style.display="none";$("#chatSettingsBtn").textContent="⚙️ 已配置 · 修改";const s=$("#cfgSaved");s.style.display="inline";s.style.transition="none";s.style.opacity="1";clearTimeout(window.__cfgT);window.__cfgT=setTimeout(()=>{s.style.transition="opacity .6s";s.style.opacity="0";setTimeout(()=>s.style.display="none",600);},2200);};
+  $("#cs_clear").onclick=()=>{if(confirm("清空所有对话记录？")){saveChatHist([]);renderChat();toast("已清空对话");}};
   $("#chatSend").onclick=()=>{const t=$("#chatInput").value.trim();if(!t)return;$("#chatInput").value="";sendChat(t);};
   $("#chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#chatSend").click();}});
 }
@@ -690,10 +699,13 @@ function importHotToday(){
   }catch(e){$("#hotImportMsg").textContent="❌ JSON 解析失败："+e.message;}
 }
 $("#hotRefreshBtn").onclick=openHotRefresh;
-$("#hotCopy").onclick=()=>{const t=$("#hotRefreshText");t.select();document.execCommand("copy");alert("已复制，去 AI 对话粘贴发送即可");};
+$("#hotCopy").onclick=()=>{const t=$("#hotRefreshText");t.select();document.execCommand("copy");toast("✓ 已复制，去 AI 对话粘贴发送即可");};
 $("#hotImportBtn").onclick=importHotToday;
 $("#hotRefreshMask").onclick=e=>{if(e.target.id==="hotRefreshMask")closeHotRefresh();};
 
+// ---------- toast 轻提示 ----------
+function toast(msg,type){type=type||"ok";const box=document.getElementById("toastBox");if(!box)return;const el=document.createElement("div");el.className="toast "+type;el.textContent=msg;box.appendChild(el);requestAnimationFrame(()=>el.classList.add("show"));setTimeout(()=>{el.classList.remove("show");setTimeout(()=>el.remove(),400);},2200);}
 </script>
+<div id="toastBox"></div>
 </body>
 </html>
