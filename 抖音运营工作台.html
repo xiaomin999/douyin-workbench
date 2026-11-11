@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抖音创作运营工作台</title>
+<style>
+:root{
+  --bg:#f4f5f7; --card:#fff; --text:#242424; --muted:#8a8f99;
+  --line:#e8eaed; --accent:#FE2C55; --accent2:#25F4EE;
+  --ok:#2ecc71; --warn:#f5a623; --bad:#e74c3c; --blue:#2b7de9;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:#1f1f24;color:#cfd2d8;flex-shrink:0;transition:width .2s;display:flex;flex-direction:column}
+.sidebar.collapsed{width:72px}
+.logo{padding:18px 20px;font-size:17px;font-weight:700;color:#fff;display:flex;align-items:center;gap:10px;white-space:nowrap}
+.logo .dot{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent2));flex-shrink:0}
+.nav{flex:1;padding:8px}
+.nav a{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;color:#cfd2d8;text-decoration:none;cursor:pointer;margin-bottom:4px;font-size:14px;white-space:nowrap}
+.nav a:hover{background:#2c2c33}
+.nav a.active{background:linear-gradient(135deg,rgba(254,44,85,.20),rgba(37,244,238,.12));color:#fff}
+.nav a svg{width:19px;height:19px;flex-shrink:0}
+.sidebar.collapsed .nav a span,.sidebar.collapsed .logo span{display:none}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{height:56px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 20px;gap:14px}
+.topbar .menu-btn{cursor:pointer;font-size:20px;color:#555;user-select:none}
+.topbar h1{font-size:16px;font-weight:600}
+.topbar .right{margin-left:auto;color:var(--muted);font-size:13px}
+.content{padding:22px;overflow:auto;flex:1}
+.section{display:none}
+.section.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px}
+.card h2{font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.card h2 .bar{width:4px;height:15px;background:var(--accent);border-radius:2px}
+.card .head-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.grid{display:grid;gap:14px}
+.grid.c3{grid-template-columns:repeat(3,1fr)}
+.grid.c2{grid-template-columns:repeat(2,1fr)}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px}
+.stat .v{font-size:24px;font-weight:700}
+.stat .v.red{color:var(--accent)}
+.stat .l{color:var(--muted);font-size:12px;margin-top:4px}
+.btn{background:var(--accent);color:#fff;border:none;padding:9px 16px;border-radius:8px;cursor:pointer;font-size:13px}
+.btn.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.ai{background:#7c3aed;color:#fff}
+.btn.ai:hover{background:#6d28d9}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600;background:#fafbfc;white-space:nowrap}
+.badge{padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+.badge.ok{background:#e8f8ef;color:#1a9e5b}
+.badge.pending{background:#fff4e0;color:#c77c00}
+.badge.run{background:#eaf3ff;color:var(--blue)}
+.badge.red{background:#fdeaea;color:var(--bad)}
+.badge.todo{background:#eaf3ff;color:var(--blue)}
+.badge.doing{background:#fff4e0;color:#c77c00}
+.badge.done{background:#e8f8ef;color:#1a9e5b}
+.badge.drop{background:#f0f0f0;color:#999}
+input,textarea,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px;background:#fff;color:var(--text)}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:3px}
+.tree{font-size:13px;line-height:2}
+.tree .d{color:var(--accent);font-weight:600}
+.tree .f{color:#555}
+.tree .sub{padding-left:18px;color:#555}
+.link{color:var(--accent);text-decoration:none}
+.link:hover{text-decoration:underline}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tab{padding:7px 14px;border:1px solid var(--line);border-radius:20px;cursor:pointer;font-size:13px;background:#fff}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.muted{color:var(--muted)}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{flex:1;min-width:130px}
+.pipe{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.pcard{border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff}
+.pcard .n{font-size:12px;color:var(--muted)}
+.pcard .t{font-size:14px;font-weight:600;margin:4px 0 8px}
+.pcard .m{font-size:12px;color:#555;line-height:1.6}
+.pcard .foot{margin-top:10px;display:flex;justify-content:space-between;align-items:center}
+.empty{color:var(--muted);font-size:13px;padding:14px 0}
+.auto-item{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;background:#fff}
+.auto-item .nm{font-weight:600;font-size:14px}
+.auto-item .sc{color:var(--blue);font-size:12px;margin-top:4px}
+.auto-item .ds{color:#555;font-size:12px;margin-top:6px;line-height:1.6}
+.hot-item{border-left:3px solid var(--accent);padding:10px 14px;background:#fff;border-radius:0 8px 8px 0;margin-bottom:10px}
+.hot-item .h{font-weight:600}
+.hot-item .star{color:var(--warn)}
+.note{background:#fff8ec;border:1px solid #ffe2b8;color:#8a5a00;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.6;margin-top:10px}
+.note.blue{background:#eef5ff;border-color:#cfe2ff;color:#1d4e89}
+.guide-step{border-left:3px solid var(--accent2);padding:10px 14px;background:#fff;border-radius:0 8px 8px 0;margin-bottom:12px}
+.guide-step .t{font-weight:600;margin-bottom:4px}
+.guide-step .m{font-size:13px;color:#555;line-height:1.7}
+.guide-step .m b{color:var(--text)}
+.chat-msg{margin-bottom:12px;display:flex}
+.chat-msg.user{justify-content:flex-end}
+.chat-msg.ai{justify-content:flex-start}
+.bubble{max-width:78%;padding:10px 13px;border-radius:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word}
+.chat-msg.user .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:3px}
+.chat-msg.ai .bubble{background:#fff;border:1px solid var(--line);border-bottom-left-radius:3px}
+.chat-msg.sys .bubble{background:#fff8ec;color:#8a5a00;border:1px solid #ffe2b8;font-size:12px}
+/* modal */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:99;padding:20px}
+.modal-mask.show{display:flex}
+.modal{background:#fff;border-radius:14px;max-width:560px;width:100%;padding:22px;max-height:80vh;overflow:auto}
+.modal h3{font-size:16px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.modal textarea{width:100%;height:150px;resize:vertical;font-size:13px;line-height:1.7}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar">
+    <div class="logo"><span class="dot"></span><span>抖创工作台</span></div>
+    <nav class="nav">
+      <a data-sec="overview" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg><span>概览</span></a>
+      <a data-sec="material"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10H3z"/></svg><span>素材库</span></a>
+      <a data-sec="hot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3c3 3 5 5 5 8a5 5 0 0 1-10 0c0-1 .5-2 1-3 .5 2 2 2 4-5z"/></svg><span>热点跟拍</span></a>
+      <a data-sec="pipeline"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h12M8 12h12M8 18h12M3 6h.01M3 12h.01M3 18h.01"/></svg><span>创作流水线</span></a>
+      <a data-sec="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M15 4l4 4M9 9h6M9 13h6"/></svg><span>拍摄剪辑发布指导</span></a>
+      <a data-sec="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>AI 对话</span></a>
+      <a data-sec="exp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg><span>经验数据库</span></a>
+      <a data-sec="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4v16h16M8 14l3-4 3 3 4-6"/></svg><span>数据复盘</span></a>
+      <a data-sec="auto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg><span>自动化</span></a>
+      <a data-sec="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M15 4l4 4"/></svg><span>资料库</span></a>
+    </nav>
+  </aside>
+  <div class="main">
+    <div class="topbar">
+      <span class="menu-btn" id="menuBtn">≡</span>
+      <h1 id="pageTitle">概览</h1>
+      <span class="right">抖音创作系统 · 7 步闭环</span>
+    </div>
+    <div class="content">
+
+      <!-- 概览 -->
+      <section class="section active" id="overview">
+        <div class="grid c3">
+          <div class="stat"><div class="v red">6/7</div><div class="l">已完成步骤（第7步待积累数据）</div></div>
+          <div class="stat"><div class="v" id="ov_hotcnt">0</div><div class="l">热点库待拍/拍摄中条目</div></div>
+          <div class="stat"><div class="v">2</div><div class="l">每日自动化（素材同步 + 热点匹配）</div></div>
+        </div>
+        <div class="card">
+          <h2><span class="bar"></span>七步流水线进度</h2>
+          <table id="ovTable"><thead><tr><th>步</th><th>内容</th><th>状态</th><th>脑力 / 工具</th><th>AI</th></tr></thead><tbody id="ovBody"></tbody></table>
+        </div>
+        <div class="card">
+          <h2><span class="bar"></span>今日提醒</h2>
+          <div class="muted" style="line-height:1.9">
+            · 第 1 步素材库已建好，每日 09:00 自动同步<br>
+            · 第 2 步热点每日 09:30 自动采集并匹配（见「热点跟拍」）<br>
+            · 今日已产出：逆袭卡点分镜 + 剪辑优化 + 合规声明 + 钩子/回评分析<br>
+            · 新功能：热点可「收藏进热点库」改天拍；每步可「🤖 让AI分析」；新增「拍摄剪辑发布指导」<br>
+            · 下一步：在剪映按优化清单改完视频 → 发布 → 第 6 步次日复盘回填本工作台
+          </div>
+        </div>
+      </section>
+
+      <!-- 素材库 -->
+      <section class="section" id="material">
+        <div class="card">
+          <div class="head-row">
+            <h2 style="margin:0"><span class="bar"></span>网盘素材库结构（百度网盘 / 抖音创作素材库）</h2>
+            <div>
+              <button class="btn ghost sm" onclick="window.open('https://pan.baidu.com','_blank')">🔗 打开百度网盘</button>
+              <button class="btn ai sm" onclick="openAIPrompt(1)">🤖 让AI同步盘点</button>
+            </div>
+          </div>
+          <div class="tree">
+            <div class="d">抖音创作素材库/</div>
+            <div class="sub">00_索引/ <span class="f">（素材索引 + 经验库入口）</span></div>
+            <div class="sub"><span class="d">01_素材/</span></div>
+            <div class="sub" style="padding-left:36px"><span class="d">我的/</span> <span class="f">视频 · 图片 · 音频 · 音乐 · 文案</span></div>
+            <div class="sub" style="padding-left:36px"><span class="d">对象的/</span> <span class="f">视频 · 图片 · 音频 · 音乐 · 文案</span></div>
+            <div class="sub">02_成片/ <span class="f">（共用，不按人分）</span></div>
+            <div class="sub">03_热点跟拍/ <span class="f">（每期：素材 + 脚本 + 成片 + 复盘，共用）</span></div>
+          </div>
+          <div class="note">同步逻辑：每日 09:00 自动化把网盘新增素材拉到本地 <code>netdisk_mirror/</code> 并刷新 <code>素材索引.md</code>（&gt;200MB 仅记录不下载）。剪映无官方 API，采用文件级结构化对接——你打开剪映直接从 <code>01_素材</code> 或某期 <code>03_热点跟拍/素材</code> 导入，成片导回 <code>02_成片</code>。下方盘点可手动维护（存本机）。</div>
+        </div>
+        <div class="card">
+          <div class="head-row">
+            <h2 style="margin:0"><span class="bar"></span>当前素材盘点（手动维护）</h2>
+            <button class="btn sm" id="inv_save">💾 保存盘点</button>
+          </div>
+          <table id="invTable"><thead><tr><th>归属</th><th>类型</th><th>数量 / 状态</th></tr></thead><tbody id="invBody"></tbody></table>
+          <div class="note">说明：网盘真实数据请点上方「打开百度网盘」查看；这里仅作本地台账。点「保存盘点」存到本机浏览器（换设备/清缓存会丢，重要数据以网盘为准）。</div>
+        </div>
+      </section>
+
+      <!-- 热点跟拍 -->
+      <section class="section" id="hot">
+        <div class="card">
+          <div class="head-row">
+            <h2 style="margin:0"><span class="bar"></span>今日可跟拍热点（<span id="hotDate">2026-11-11</span>，已剔敏感类）</h2>
+            <div style="display:flex;gap:8px">
+              <button class="btn sm" id="hotRefreshBtn">🔄 手动刷新</button>
+              <button class="btn ai sm" onclick="openAIPrompt(2)">🤖 让AI匹配素材</button>
+            </div>
+          </div>
+          <div id="hotToday"></div>
+          <div class="note">点每张卡片的「📌 收藏到热点库」即可加入下方热点库（默认状态：待拍），今天不拍的改天接着拍也没问题。抖音无官方采集连接器，点「🔄 手动刷新」会生成一段指令，发到对话框让我实时抓取最新热点，再把回给你的 JSON 粘进弹窗即可更新本页。</div>
+        </div>
+        <div class="card">
+          <div class="head-row">
+            <h2 style="margin:0"><span class="bar"></span>📥 热点库（持久化，可改天拍）</h2>
+            <span class="muted">共 <b id="hotlib_cnt">0</b> 条</span>
+          </div>
+          <div class="row" style="margin-bottom:10px">
+            <div><label>手动添加热点</label><input id="hl_title" placeholder="热点标题，如：城市夜骑"></div>
+            <div><label>类型</label><input id="hl_type" placeholder="如：生活Vlog"></div>
+            <div><label>热度/来源</label><input id="hl_heat" placeholder="如：抖音#5 · 600万"></div>
+            <div style="flex:0 0 auto;display:flex;align-items:flex-end"><button class="btn" id="hl_add">➕ 添加</button></div>
+          </div>
+          <div id="hotlibList"></div>
+        </div>
+      </section>
+
+      <!-- 创作流水线 -->
+      <section class="section" id="pipeline">
+        <div class="card">
+          <h2><span class="bar"></span>七步创作流水线（每步可🤖让AI分析做法）</h2>
+          <div class="pipe" id="pipeWrap"></div>
+        </div>
+      </section>
+
+      <!-- 拍摄剪辑发布指导 -->
+      <section class="section" id="guide">
+        <div class="card">
+          <h2><span class="bar"></span>全过程指导（拍摄 / 剪辑 / 发布）</h2>
+          <div class="tabs" id="guideTabs">
+            <span class="tab active" data-g="shoot">🎬 拍摄指导</span>
+            <span class="tab" data-g="edit">✂️ 剪辑指导</span>
+            <span class="tab" data-g="publish">🚀 发布指导</span>
+          </div>
+          <div id="guideBody"></div>
+        </div>
+      </section>
+
+      <!-- 经验数据库 -->
+      <section class="section" id="exp">
+        <div class="card">
+          <h2><span class="bar"></span>经验数据库（本地持久化，发布后回填）</h2>
+          <div class="tabs" id="expTabs"></div>
+          <div id="expForm"></div>
+          <div id="expList"></div>
+        </div>
+      </section>
+
+      <!-- 数据复盘 -->
+      <section class="section" id="review">
+        <div class="card">
+          <h2><span class="bar"></span>次日数据复盘录入</h2>
+          <div class="row">
+            <div><label>日期</label><input id="r_date" type="date"></div>
+            <div><label>视频主题</label><input id="r_theme" placeholder="如：对象拍照日常·逆袭卡点"></div>
+          </div>
+          <div class="row">
+            <div><label>播放量</label><input id="r_play" type="number" placeholder="0"></div>
+            <div><label>完播率(%)</label><input id="r_finish" type="number" step="0.1" placeholder="0"></div>
+            <div><label>点赞</label><input id="r_like" type="number" placeholder="0"></div>
+            <div><label>评论</label><input id="r_cmt" type="number" placeholder="0"></div>
+            <div><label>转发</label><input id="r_share" type="number" placeholder="0"></div>
+            <div><label>涨粉</label><input id="r_follow" type="number" placeholder="0"></div>
+          </div>
+          <div class="row">
+            <div><label>最留人段落</label><input id="r_best" placeholder="如：49s 反转"></div>
+            <div><label>最大流失点</label><input id="r_drop" placeholder="如：15s 蔬菜段"></div>
+          </div>
+          <div><label>踩了什么坑</label><textarea id="r_pit" rows="2" placeholder="合规 / 限流 / 剪辑问题"></textarea></div>
+          <div><label>下次改进</label><textarea id="r_imp" rows="2" placeholder="具体可执行的改进"></textarea></div>
+          <button class="btn" id="r_submit">保存复盘</button>
+          <button class="btn ghost" id="r_clear" style="margin-left:8px">清空表单</button>
+          <div id="r_calc" class="note" style="display:none"></div>
+        </div>
+        <div class="card">
+          <h2><span class="bar"></span>复盘历史</h2>
+          <div id="reviewList"></div>
+        </div>
+      </section>
+
+      <!-- 自动化 -->
+      <section class="section" id="auto">
+        <div class="card">
+          <h2><span class="bar"></span>每日自动化</h2>
+          <div class="auto-item"><div class="nm">抖音素材库每日同步</div><div class="sc">每天 09:00 · 状态：运行中</div><div class="ds">比对网盘与本地 → 新增素材拉到 <code>netdisk_mirror/</code> → 刷新 <code>素材索引.md</code> 并汇报（&gt;200MB 仅记录）。</div></div>
+          <div class="auto-item"><div class="nm">每日抖音热点采集与跟拍匹配</div><div class="sc">每天 09:30 · 状态：运行中</div><div class="ds">抓抖音/快手实时榜 → 剔敏感类 → 结合两块素材输出跟拍候选 → 更新第 2 步文档。</div></div>
+          <div class="note">第 3 个自动化（发布后第 2 天触发复盘）建议在视频发布后补建——届时告诉我发布日期即可。</div>
+        </div>
+      </section>
+
+      <!-- 资料库 -->
+      <section class="section" id="docs">
+        <div class="card">
+          <h2><span class="bar"></span>方案与文档（资料库链接）</h2>
+          <table><thead><tr><th>文档</th><th>链接</th></tr></thead><tbody id="docBody"></tbody></table>
+        </div>
+      </section>
+
+      <!-- AI 对话 -->
+      <section class="section" id="chat">
+        <div class="card">
+          <div class="head-row">
+            <h2 style="margin:0"><span class="bar"></span>AI 对话（抖音创作助手）</h2>
+            <button class="btn ghost sm" id="chatSettingsBtn">⚙️ 设置 / 接入</button>
+          </div>
+          <div id="chatSettings" style="display:none;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;background:#fafbfc">
+            <div class="row">
+              <div><label>服务商预设</label><select id="cs_preset">
+                <option value="">自定义</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="qwen">阿里云百炼(通义)</option>
+                <option value="zhipu">智谱 GLM</option>
+                <option value="kimi">Moonshot Kimi</option>
+                <option value="openai">OpenAI</option>
+              </select></div>
+              <div><label>API Base URL</label><input id="cs_base" placeholder="https://api.deepseek.com/v1"></div>
+            </div>
+            <div class="row">
+              <div><label>API Key（仅存本机浏览器）</label><input id="cs_key" type="password" placeholder="sk-..."></div>
+              <div><label>模型名</label><input id="cs_model" placeholder="deepseek-chat"></div>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="cs_ctx" style="width:auto;margin:0"> 对话时附带工作台数据（热点库/经验库/复盘）</label>
+            <div style="margin-top:10px"><button class="btn sm" id="cs_save">保存设置</button> <button class="btn ghost sm" id="cs_clear">清空对话</button></div>
+            <div class="note blue" style="margin-top:10px">密钥只存在你本机浏览器 localStorage，不会上传到除所选服务商外的任何地方；请勿把本 HTML 分享给他人。若双击打开(file://)调用被 CORS 拦截，可在文件目录运行 <code>python -m http.server</code> 后访问 http://127.0.0.1:8000/抖音运营工作台.html</div>
+          </div>
+          <div id="chatBox" style="border:1px solid var(--line);border-radius:10px;padding:14px;height:380px;overflow:auto;background:#fafbfc;margin-bottom:12px"></div>
+          <div class="row" style="align-items:flex-end">
+            <div style="flex:1"><textarea id="chatInput" rows="2" placeholder="问 AI 任何创作问题，如：今天哪个热点值得我拍？"></textarea></div>
+            <div style="flex:0 0 auto"><button class="btn" id="chatSend">发送</button></div>
+          </div>
+          <div class="note" id="chatHint"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<!-- 手动刷新热点弹窗 -->
+<div class="modal-mask" id="hotRefreshMask">
+  <div class="modal">
+    <h3>🔄 手动刷新今日热点</h3>
+    <p class="muted" style="font-size:13px;margin-bottom:10px">抖音没有公开 API，纯网页没法自动联网抓榜。用下面两步手动刷新：</p>
+    <p style="font-size:13px;margin:6px 0"><b>第1步</b>：复制下方指令，发到左侧「AI 对话」或本会话，我会实时抓抖音/快手热点并把一段 JSON 回给你。</p>
+    <textarea id="hotRefreshText" readonly></textarea>
+    <div class="acts"><button class="btn ghost" onclick="closeHotRefresh()">关闭</button><button class="btn" id="hotCopy">复制指令</button></div>
+    <hr style="margin:16px 0;border:none;border-top:1px solid #eee">
+    <p style="font-size:13px;margin:6px 0"><b>第2步</b>：把 AI 回给你的 JSON 粘进下方框，点「导入」，本页热点立即更新。</p>
+    <textarea id="hotImportText" placeholder='[{"title":"热点名","star":5,"heat":"抖音#3 · 600万","type":"生活"}]'></textarea>
+    <div class="acts"><button class="btn" id="hotImportBtn">导入</button></div>
+    <div id="hotImportMsg" class="note" style="margin-top:8px"></div>
+  </div>
+</div>
+
+<script>
+// ---------- 数据 ----------
+const STEPS=[
+  {n:1,t:"百度网盘素材库 + 每日同步",s:"ok",who:"百度网盘 + library",doc:"总方案"},
+  {n:2,t:"抖音热点采集 + 跟拍匹配",s:"ok",who:"八爪鱼/夺冠蜂巢 + WebSearch",doc:"第2步"},
+  {n:3,t:"剪辑手法优化 + 爆火分析",s:"ok",who:"剪辑钩子专家",doc:"第3步"},
+  {n:4,t:"侵权违规检查 + 风险声明",s:"ok",who:"文案合规审核专家",doc:"第4步"},
+  {n:5,t:"钩子/涨粉/回评痛点分析",s:"ok",who:"剪辑钩子专家(复用)",doc:"第5步"},
+  {n:6,t:"次日数据复盘 + 经验库",s:"ok",who:"数据复盘报表专家 + 本工作台",doc:"第6步"},
+  {n:7,t:"推导创作路线",s:"pending",who:"助手综合经验库",doc:"待做"},
+];
+const PIPE=[
+  {n:1,t:"素材同步",m:"网盘素材库 + 每日 09:00 同步自动化",s:"ok",doc:"总方案"},
+  {n:2,t:"热点匹配",m:"采热点 + 素材跟拍匹配（每日 09:30）",s:"ok",doc:"第2步"},
+  {n:3,t:"剪辑优化",m:"钩子/封面/节奏/完播 + 爆火手法",s:"ok",doc:"第3步"},
+  {n:4,t:"合规声明",m:"逐句审 + 侵权/肖像/版权排查",s:"ok",doc:"第4步"},
+  {n:5,t:"钩子/涨粉/回评",m:"钩子设计 + 涨粉触发 + 回复策略",s:"ok",doc:"第5步"},
+  {n:6,t:"数据复盘",m:"次日指标 + 经验库 5 库沉淀",s:"ok",doc:"第6步"},
+  {n:7,t:"创作路线",m:"汇总经验库推人设/选题/节奏",s:"pending",doc:"待做"},
+];
+const DOCS=[
+  {t:"总方案（7步闭环·按人分块）",u:"https://www.workbuddy.cn/space/d/oyp4JnFiX4IjGXIvYBP4W9"},
+  {t:"分镜脚本（本人号·逆袭卡点）",u:"https://www.workbuddy.cn/space/d/MYXUO6nVcqC2lUy4hEJTms"},
+  {t:"第2步_热点采集与跟拍匹配",u:"https://www.workbuddy.cn/space/d/dKMLz7RyTJ9LhCS8bjU9KV"},
+  {t:"第3步_剪辑手法优化与爆火分析",u:"https://www.workbuddy.cn/space/d/ipkeB71hXohhfNzYJ3o6Iu"},
+  {t:"第4步_侵权违规检查与风险声明",u:"https://www.workbuddy.cn/space/d/NFfoGDjosBUWbhVGLkPaof"},
+];
+const EXP_CFG={
+  hot:{name:"热点跟拍库",fields:["日期","热点","契合度","可用素材","缺口"]},
+  edit:{name:"剪辑手法库",fields:["日期","手法","完播表现","是否复用"]},
+  comp:{name:"合规库",fields:["日期","踩坑点","等级","声明/处理"]},
+  hook:{name:"钩子库",fields:["日期","钩子类型","点击贡献","完播贡献"]},
+  grow:{name:"涨粉/回评库",fields:["日期","涨粉触发点","高频评论","回复话术"]},
+};
+const HOT_TODAY_DEFAULT=[
+  {title:"交换一张你拍到的秋天吧",star:5,heat:"抖音#4 · 1128万 · 秋景照片共创",type:"秋景照片共创"},
+  {title:"超长饺子吃了不烧心",star:5,heat:"抖音#8 · 842万 · 超长美食整活",type:"超长美食整活"},
+  {title:"树说中国",star:4,heat:"抖音#7 · 914万 · 文化纪实",type:"文化纪实"},
+];
+const HOT_TODAY_DATE_DEFAULT="2026-11-11";
+function loadHotToday(){const v=load("dy_hottoday");if(v&&v.list&&v.list.length)return v;const d={date:HOT_TODAY_DATE_DEFAULT,list:HOT_TODAY_DEFAULT.map(x=>({...x}))};save("dy_hottoday",d);return d;}
+function saveHotToday(d){save("dy_hottoday",d);}
+const AI_PROMPTS={
+  1:"帮我打开百度网盘「抖音创作素材库」，盘点「我的」和「对象的」两块当前各类型素材数量，告诉我缺哪些类型、建议优先补拍什么。",
+  2:"今天抖音/快手有哪些可跟拍热点？结合我网盘里的素材（对象的30张蔬菜静物+3张人像、我的视频），给跟拍优先级和具体角度建议。",
+  3:"针对我刚剪的「对象拍照日常·逆袭卡点」视频，分析3秒钩子、封面、完播率和运镜，给一份可执行的优化清单。",
+  4:"逐句审我这条视频的标题/字幕/封面文案，标出抖音规则和广告法风险点，并给合规改写 + 风险声明模板。",
+  5:"分析这条视频的前3秒钩子、完播留人点和涨粉触发点；并基于评论区高频评论，给我5条回复话术。",
+  6:"我发布后第2天的数据出来了（播放/完播率/赞评转/涨粉），帮我算互动率和涨粉率，定位最大流失点，并写一条经验沉淀到经验库。",
+  7:"汇总我经验库里这几期的热点跟拍/剪辑/合规/钩子/涨粉数据，推导适合我的内容人设、选题池和更新节奏。",
+};
+const GUIDES={
+  shoot:[
+    {t:"1. 先定钩子再拍",m:"拍之前想清楚这条视频的<b>反转点/钩子</b>是什么（如：前面全拍菜，最后切人像）。所有素材围绕它服务，避免拍一堆用不上的。"},
+    {t:"2. 让对象放松",m:"别摆拍。抓<b>自然状态</b>（走路、低头看手机、笑场），比刻意pose更真实更有梗。用口语逗他，抓拍瞬间。"},
+    {t:"3. 手机稳定",m:"用<b>支架或防抖</b>，横平竖直；同一段别晃。静物（菜/桌面）用三脚架固定，光线充足再拍，缩略图才清晰。"},
+    {t:"4. 留 B-roll 空镜",m:"多拍几秒<b>环境空镜</b>（街景、天空、桌面），剪辑时填补节奏或转场。缺素材时可用可灵AI补生成。"},
+    {t:"5. 控制时长",m:"单条 <b>30–90 秒</b>。蔬菜/铺垫段别超过 28 秒，否则完播率崩。素材多就拆成系列，别硬塞一条。"},
+    {t:"6. 拍完即归档",m:"导入网盘 <code>01_素材/对象的/图片</code> 或 <code>03_热点跟拍/素材</code>，命名带日期，方便下次找。"},
+  ],
+  edit:[
+    {t:"1. 黄金3秒钩子",m:"开头加<b>推近动效 + 好奇缺口句</b>（如「我的相册里…居然全是这个？」）+ 抓耳音效。决定划走还是留下。"},
+    {t:"2. 封面三选一",m:"做 <b>3 版封面</b> A/B 测：夜景人像 / 芹菜特写 / 压暗问号。问号悬念点击动机最强，发后看数据留优。"},
+    {t:"3. 保完播（最关键）",m:"压缩铺垫段到 ~28s；埋 <b>2 个微彩蛋笑点</b>；38s 左右让<b>人像闪现预告</b>；末 1 秒放<b>系列钩子</b>（「下集更狠」）。"},
+    {t:"4. 运镜让静图活",m:"每张静态图加 <b>Ken Burns 缩放/平移</b>（剪映「特效-运镜」），别滥用花哨转场，相邻图 0.3–0.5s 叠化即可。"},
+    {t:"5. 卡点对齐鼓点",m:"用剪映<b>「自动踩点」</b>对齐鼓点，比手动定时更准；卡点版每张 1.5–2s，走心版 3–4s 慢推。"},
+    {t:"6. 字幕克制",m:"关键几张加<b>一句话字幕</b>，别满屏。字体大、对比强，手机小屏也看得清。"},
+  ],
+  publish:[
+    {t:"1. 发布时间",m:"优先 <b>晚 18–22 点</b> 或午休 12–14 点，错峰；新号可试早 7–9 点通勤。固定节奏培养粉丝习惯。"},
+    {t:"2. 标题与封面",m:"用剪辑指导的<b>悬念封面 + 好奇标题</b>，但必须兑现（反转真实），否则被判标题党限流。"},
+    {t:"3. 风险声明模板",m:"配文/置顶评论放四段声明：<b>素材</b>（本人拍摄，非盗图）/ <b>音乐</b>（剪映曲库）/ <b>AI</b>（若用可灵则标注）/ <b>内容</b>（个人记录，仅供参考）。"},
+    {t:"4. 评论区运营",m:"<b>神评置顶</b>、<b>自嘲接梗</b>、引导关注；合规边界内聊，别引战。第5步有 5 条话术可直接用。"},
+    {t:"5. 数据复盘时点",m:"发布后 <b>第 2 天</b>回填本工作台「数据复盘」：播放/完播率/赞评转/涨粉，系统自动算互动率·涨粉率。"},
+    {t:"6. 合规红线",m:"<b>不用极限词</b>（最/第一/顶级）；BGM 只用曲库；他人出镜要授权/打码；纯颜值晒照易被判低质限流，用「梗+人设」对冲。"},
+  ],
+};
+
+// ---------- 渲染 ----------
+const $=s=>document.querySelector(s);
+function badge(s){return s==="ok"?'<span class="badge ok">已完成</span>':(s==="run"?'<span class="badge run">运行中</span>':'<span class="badge pending">待做</span>');}
+const STATUS={todo:{t:"待拍",c:"todo"},doing:{t:"拍摄中",c:"doing"},done:{t:"已拍",c:"done"},drop:{t:"放弃",c:"drop"}};
+
+function renderOverview(){
+  let h="";
+  STEPS.forEach(x=>{h+=`<tr><td>第${x.n}步</td><td>${x.t}</td><td>${badge(x.s)}</td><td class="muted">${x.who}</td><td><button class="btn ai sm" onclick="openAIPrompt(${x.n})">🤖 分析</button></td></tr>`;});
+  $("#ovBody").innerHTML=h;
+}
+function renderPipe(){
+  let h="";
+  PIPE.forEach(x=>{h+=`<div class="pcard"><div class="n">第${x.n}步</div><div class="t">${x.t}</div><div class="m">${x.m}</div><div class="foot"><span>${badge(x.s)}</span><button class="btn ai sm" onclick="openAIPrompt(${x.n})">🤖 AI分析</button></div></div>`;});
+  $("#pipeWrap").innerHTML=h;
+}
+function renderDocs(){
+  let h="";DOCS.forEach(d=>{h+=`<tr><td>${d.t}</td><td><a class="link" href="${d.u}" target="_blank">打开</a></td></tr>`;});
+  $("#docBody").innerHTML=h;
+}
+function renderHotToday(){
+  let h="";
+  const d=loadHotToday();const hd=$("#hotDate");if(hd)hd.textContent=d.date;d.list.forEach(x=>{
+    h+=`<div class="hot-item"><div class="h">${x.title} <span class="star">${"★".repeat(x.star)}</span></div><div class="muted">${x.heat}</div><div style="margin-top:8px"><button class="btn sm" onclick="addHot('${x.title.replace(/'/g,"\\'")}','${x.type.replace(/'/g,"\\'")}','${x.heat.replace(/'/g,"\\'")}',${x.star})">📌 收藏到热点库</button></div></div>`;
+  });
+  $("#hotToday").innerHTML=h;
+}
+
+// ---------- 热点库 ----------
+function load(k){try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return[]}}
+function save(k,v){localStorage.setItem(k,JSON.stringify(v));}
+function loadHotLib(){return load("dy_hotlib");}
+function saveHotLib(a){save("dy_hotlib",a);updateHotStat();}
+function addHot(title,type,heat,star){
+  const a=loadHotLib();
+  if(a.some(x=>x.title===title)){alert("已在热点库中："+title);return;}
+  a.unshift({id:Date.now(),date:new Date().toISOString().slice(0,10),title,type,heat,star:star||0,status:"todo",note:""});
+  saveHotLib(a);renderHotLib();
+}
+function renderHotLib(){
+  const a=loadHotLib();
+  $("#hotlib_cnt").textContent=a.length;
+  if(!a.length){$("#hotlibList").innerHTML='<div class="empty">热点库为空。看到今天想拍的热点，点上方「📌 收藏到热点库」；或手动添加。</div>';return;}
+  let h="<table><thead><tr><th>日期</th><th>热点</th><th>类型/热度</th><th>状态</th><th>备注</th><th>操作</th></tr></thead><tbody>";
+  a.forEach(o=>{
+    h+=`<tr><td>${o.date}</td><td>${o.title} ${o.star?"<span class='star' style='color:var(--warn)'>"+"★".repeat(o.star)+"</span>":""}</td><td class="muted">${o.type||""}<br>${o.heat||""}</td>`;
+    h+=`<td><select onchange="setHotStatus(${o.id},this.value)">`;
+    Object.keys(STATUS).forEach(k=>{h+=`<option value="${k}" ${o.status===k?'selected':''}>${STATUS[k].t}</option>`;});
+    h+=`</select></td>`;
+    h+=`<td><input value="${o.note||""}" onchange="setHotNote(${o.id},this.value)" placeholder="如：缺秋景"></td>`;
+    h+=`<td><button class="btn sm" onclick="delHot(${o.id})">删</button></td></tr>`;
+  });
+  h+="</tbody></table>";$("#hotlibList").innerHTML=h;
+}
+function setHotStatus(id,v){const a=loadHotLib();const o=a.find(x=>x.id===id);if(o){o.status=v;saveHotLib(a);renderHotLib();}}
+function setHotNote(id,v){const a=loadHotLib();const o=a.find(x=>x.id===id);if(o){o.note=v;saveHotLib(a);}}
+function delHot(id){saveHotLib(loadHotLib().filter(x=>x.id!==id));renderHotLib();}
+function updateHotStat(){const a=loadHotLib();const n=a.filter(x=>x.status==="todo"||x.status==="doing").length;$("#ov_hotcnt").textContent=n;}
+
+// ---------- 素材盘点（手动） ----------
+const INV_DEFAULT=[
+  {who:"我的",type:"视频",cnt:"已放入1支"},
+  {who:"我的",type:"图片/音频/音乐/文案",cnt:"空占位"},
+  {who:"对象的",type:"图片",cnt:"33张(30蔬菜+3人像)"},
+  {who:"对象的",type:"视频/音频/音乐/文案",cnt:"空占位"},
+];
+function loadInv(){const v=load("dy_inv");return v.length?v:INV_DEFAULT.map(x=>({...x}));}
+function renderInv(){
+  const a=loadInv();
+  let h="";
+  a.forEach((o,i)=>{h+=`<tr><td>${o.who}</td><td>${o.type}</td><td><input data-i="${i}" value="${o.cnt}" style="margin:0"></td></tr>`;});
+  $("#invBody").innerHTML=h;
+  $("#invBody").querySelectorAll("input").forEach(inp=>{
+    inp.onchange=()=>{const a2=loadInv();a2[+inp.dataset.i].cnt=inp.value;save("dy_inv",a2);};
+  });
+}
+$("#inv_save").onclick=()=>{$("#invBody").querySelectorAll("input").forEach(inp=>{const a2=loadInv();a2[+inp.dataset.i].cnt=inp.value;save("dy_inv",a2);});alert("已保存到本机浏览器");};
+
+// ---------- 经验库 ----------
+let curExp="hot";
+function renderExpTabs(){
+  let h="";Object.keys(EXP_CFG).forEach(k=>{h+=`<span class="tab ${k===curExp?'active':''}" data-k="${k}">${EXP_CFG[k].name}</span>`;});
+  $("#expTabs").innerHTML=h;
+  $("#expTabs").querySelectorAll(".tab").forEach(t=>t.onclick=()=>{curExp=t.dataset.k;renderExpTabs();renderExpForm();renderExpList();});
+}
+function expKey(k){return "dy_exp_"+k;}
+function renderExpForm(){
+  const cfg=EXP_CFG[curExp];let h=`<div class="row">`;
+  cfg.fields.forEach(f=>{h+=`<div><label>${f}</label><input data-f="${f}" class="ef"></div>`;});
+  h+=`</div><button class="btn" id="ef_add">添加一条</button><span class="muted" style="margin-left:10px">当前库：${cfg.name}（共 <b id="ef_cnt">0</b> 条）</span>`;
+  $("#expForm").innerHTML=h;
+  $("#ef_add").onclick=()=>{
+    const inp=$("#expForm").querySelectorAll(".ef");const o={id:Date.now()};
+    inp.forEach(i=>o[i.dataset.f]=i.value);
+    if(!Object.values(o).some(v=>v && v!==o.id)){alert("请至少填一项");return;}
+    const arr=load(expKey(curExp));arr.unshift(o);save(expKey(curExp),arr);renderExpForm();renderExpList();
+  };
+}
+function renderExpList(){
+  const cfg=EXP_CFG[curExp];const arr=load(expKey(curExp));
+  $("#ef_cnt")&&($("#ef_cnt").textContent=arr.length);
+  if(!arr.length){$("#expList").innerHTML='<div class="empty">暂无记录，发布后回填。</div>';return;}
+  let h="<table><thead><tr>";cfg.fields.forEach(f=>h+=`<th>${f}</th>`);h+="<th>操作</th></tr></thead><tbody>";
+  arr.forEach(o=>{h+="<tr>";cfg.fields.forEach(f=>h+=`<td>${o[f]||""}</td>`);h+=`<td><button class="btn sm" onclick="delExp('${curExp}',${o.id})">删</button></td></tr>`;});
+  h+="</tbody></table>";$("#expList").innerHTML=h;
+}
+function delExp(k,id){const arr=load(expKey(k)).filter(x=>x.id!==id);save(expKey(k),arr);renderExpForm();renderExpList();}
+
+// ---------- 数据复盘 ----------
+function renderReviews(){
+  const arr=load("dy_reviews");
+  if(!arr.length){$("#reviewList").innerHTML='<div class="empty">暂无复盘，发布次日回填。</div>';return;}
+  let h="<table><thead><tr><th>日期</th><th>主题</th><th>播放</th><th>完播%</th><th>互动率</th><th>涨粉率</th><th>最留人</th><th>操作</th></tr></thead><tbody>";
+  arr.forEach(r=>{
+    const play=+r.play||0,inter=((((+r.like||0)+(+r.cmt||0)+(+r.share||0))/ (play||1))*100).toFixed(2)+"%";
+    const folw=((( +r.follow||0)/(play||1))*100).toFixed(2)+"%";
+    h+=`<tr><td>${r.date}</td><td>${r.theme}</td><td>${r.play}</td><td>${r.finish}</td><td>${inter}</td><td>${folw}</td><td>${r.best||""}</td><td><button class="btn sm" onclick="delReview(${r.id})">删</button></td></tr>`;
+  });
+  h+="</tbody></table>";$("#reviewList").innerHTML=h;
+}
+function delReview(id){save("dy_reviews",load("dy_reviews").filter(x=>x.id!==id));renderReviews();}
+function bindReview(){
+  $("#r_submit").onclick=()=>{
+    const r={id:Date.now(),date:$("#r_date").value,theme:$("#r_theme").value,play:$("#r_play").value,finish:$("#r_finish").value,like:$("#r_like").value,cmt:$("#r_cmt").value,share:$("#r_share").value,follow:$("#r_follow").value,best:$("#r_best").value,drop:$("#r_drop").value,pit:$("#r_pit").value,imp:$("#r_imp").value};
+    const play=+r.play||0;
+    const inter=play?((( +r.like + +r.cmt + +r.share)/play)*100).toFixed(2)+"%":"-";
+    const folw=play?(((+r.follow)/play)*100).toFixed(2)+"%":"-";
+    const arr=load("dy_reviews");arr.unshift(r);save("dy_reviews",arr);
+    $("#r_calc").style.display="block";
+    $("#r_calc").innerHTML=`已保存。互动率 <b>${inter}</b> ｜ 涨粉率 <b>${folw}</b>（互动率&gt;5% 优秀，涨粉率&gt;1% 优质）。`;
+    renderReviews();
+  };
+  $("#r_clear").onclick=()=>{["r_date","r_theme","r_play","r_finish","r_like","r_cmt","r_share","r_follow","r_best","r_drop","r_pit","r_imp"].forEach(i=>$("#"+i).value="");$("#r_calc").style.display="none";};
+}
+
+// ---------- AI 对话 ----------
+const CHAT_PRESETS={
+  deepseek:{base:"https://api.deepseek.com/v1",model:"deepseek-chat"},
+  qwen:{base:"https://dashscope.aliyuncs.com/compatible-mode/v1",model:"qwen-plus"},
+  zhipu:{base:"https://open.bigmodel.cn/api/paas/v4",model:"glm-4-flash"},
+  kimi:{base:"https://api.moonshot.cn/v1",model:"moonshot-v1-8k"},
+  openai:{base:"https://api.openai.com/v1",model:"gpt-4o-mini"},
+};
+function getChatCfg(){return load("dy_chatcfg")||{};}
+function saveChatCfg(c){save("dy_chatcfg",c);}
+function getChatHist(){return load("dy_chathist");}
+function saveChatHist(h){save("dy_chathist",h);}
+function esc(t){return (t||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function buildContext(){
+  const cfg=getChatCfg();
+  if(!cfg.ctx) return "";
+  const hot=loadHotLib();const rev=load("dy_reviews");
+  const exp={};Object.keys(EXP_CFG).forEach(k=>exp[k]=load(expKey(k)));
+  return "\n\n[工作台当前数据]\n热点库("+hot.length+"): "+JSON.stringify(hot.slice(0,10))+"\n复盘("+rev.length+"): "+JSON.stringify(rev.slice(0,5))+"\n经验库: "+JSON.stringify(exp);
+}
+function systemPrompt(){
+  return "你是用户的抖音创作助手，服务于一个7步创作闭环系统（素材同步→热点跟拍匹配→剪辑优化→合规声明→钩子/涨粉/回评→数据复盘→创作路线）。用户有两人素材块：『我的』和『对象的』。请用简洁中文、可直接执行的建议回答，涉及脚本/文案给具体文字，涉及数据给结论。保持友好、实用。"+buildContext();
+}
+function renderChat(){
+  const h=getChatHist();const box=$("#chatBox");
+  if(!h.length){box.innerHTML='<div class="chat-msg sys"><div class="bubble">配置好 API 后，这里就能直接和你对话，帮你做热点匹配、写脚本、审合规、复盘。点右上角「⚙️ 设置」填入服务商和密钥。</div></div>';return;}
+  let s="";h.forEach(m=>{s+=`<div class="chat-msg ${m.role}"><div class="bubble">${esc(m.content)}</div></div>`;});
+  box.innerHTML=s;box.scrollTop=box.scrollHeight;
+}
+async function sendChat(text){
+  const cfg=getChatCfg();
+  if(!cfg.base||!cfg.key||!cfg.model){$("#chatHint").textContent="⚠️ 请先点右上角「⚙️ 设置」填入 API Base、Key、模型，再发送。";$("#chatHint").className="note";return;}
+  let hist=getChatHist();
+  hist.push({role:"user",content:text});saveChatHist(hist);renderChat();
+  const box=$("#chatBox");
+  const aid={role:"assistant",content:""};hist.push(aid);
+  box.insertAdjacentHTML("beforeend",'<div class="chat-msg ai" id="liveAi"><div class="bubble"></div></div>');
+  const liveB=$("#liveAi .bubble");
+  $("#chatHint").textContent="思考中…";$("#chatHint").className="note blue";
+  try{
+    const msgs=[{role:"system",content:systemPrompt()}].concat(hist.filter(m=>m.role!=="assistant"||m.content).map(m=>({role:m.role,content:m.content})));
+    const resp=await fetch(cfg.base+"/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+cfg.key},body:JSON.stringify({model:cfg.model,messages:msgs,stream:true})});
+    if(!resp.ok){const t=await resp.text();throw new Error("HTTP "+resp.status+" "+t.slice(0,200));}
+    const reader=resp.body.getReader();const dec=new TextDecoder();let buf="";let full="";
+    while(true){const {done,value}=await reader.read();if(done)break;buf+=dec.decode(value,{stream:true});let idx;while((idx=buf.indexOf("\n"))>=0){let line=buf.slice(0,idx).trim();buf=buf.slice(idx+1);if(line.startsWith("data:")){const d=line.slice(5).trim();if(d==="[DONE]")continue;try{const j=JSON.parse(d);const c=j.choices?.[0]?.delta?.content||"";if(c){full+=c;liveB.textContent=full;box.scrollTop=box.scrollHeight;}}catch(e){}}}}
+    aid.content=full;const h2=getChatHist();const last=h2[h2.length-1];if(last&&last.role==="assistant"){last.content=full;saveChatHist(h2);}
+    $("#chatHint").textContent="";$("#chatHint").className="note";
+  }catch(e){
+    aid.content="[调用失败] "+e.message;const h2=getChatHist();const last=h2[h2.length-1];if(last&&last.role==="assistant"){last.content=aid.content;saveChatHist(h2);}
+    liveB.textContent="调用失败："+e.message+"\n（多为 CORS 或密钥问题；若在 file:// 下被拦，请改用本地服务器打开，见设置说明）";
+    $("#chatHint").textContent="";$("#chatHint").className="note";
+  }
+}
+function openAIPrompt(step){
+  const p=AI_PROMPTS[step]||"";
+  $("#chatInput").value=p;
+  document.querySelectorAll(".nav a").forEach(x=>x.classList.remove("active"));
+  document.querySelectorAll(".nav a").forEach(a=>{if(a.dataset.sec==="chat")a.classList.add("active");});
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  $("#chat").classList.add("active");
+  $("#pageTitle").textContent="AI 对话";
+  $("#chatHint").textContent="已为你填好第"+step+"步的分析需求，点「发送」即可让 AI 帮你做。";
+  $("#chatHint").className="note blue";
+  $("#chatInput").focus();
+}
+function initChat(){
+  const c=getChatCfg();
+  if(c.base)$("#cs_base").value=c.base;if(c.key)$("#cs_key").value=c.key;if(c.model)$("#cs_model").value=c.model;if(c.ctx)$("#cs_ctx").checked=true;
+  renderChat();
+  $("#chatSettingsBtn").onclick=()=>{const el=$("#chatSettings");el.style.display=el.style.display==="none"?"block":"none";};
+  $("#cs_preset").onchange=function(){const p=CHAT_PRESETS[this.value];if(p){$("#cs_base").value=p.base;$("#cs_model").value=p.model;}};
+  $("#cs_save").onclick=()=>{const c={base:$("#cs_base").value.trim(),key:$("#cs_key").value.trim(),model:$("#cs_model").value.trim(),ctx:$("#cs_ctx").checked};saveChatCfg(c);alert("已保存（仅本机）");};
+  $("#cs_clear").onclick=()=>{if(confirm("清空所有对话记录？")){saveChatHist([]);renderChat();}};
+  $("#chatSend").onclick=()=>{const t=$("#chatInput").value.trim();if(!t)return;$("#chatInput").value="";sendChat(t);};
+  $("#chatInput").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#chatSend").click();}});
+}
+
+// ---------- 指导 ----------
+function renderGuide(g){
+  const arr=GUIDES[g]||[];
+  let h="";
+  arr.forEach(x=>{h+=`<div class="guide-step"><div class="t">${x.t}</div><div class="m">${x.m}</div></div>`;});
+  $("#guideBody").innerHTML=h;
+}
+$("#guideTabs").querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
+  $("#guideTabs").querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+  t.classList.add("active");renderGuide(t.dataset.g);
+});
+
+// ---------- 导航 ----------
+const TITLES={overview:"概览",material:"素材库",hot:"热点跟拍",pipeline:"创作流水线",guide:"拍摄剪辑发布指导",chat:"AI 对话",exp:"经验数据库",review:"数据复盘",auto:"自动化",docs:"资料库"};
+document.querySelectorAll(".nav a").forEach(a=>a.onclick=()=>{
+  document.querySelectorAll(".nav a").forEach(x=>x.classList.remove("active"));
+  a.classList.add("active");
+  const sec=a.dataset.sec;
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  $("#"+sec).classList.add("active");
+  $("#pageTitle").textContent=TITLES[sec];
+});
+$("#menuBtn").onclick=()=>$("#sidebar").classList.toggle("collapsed");
+
+// ---------- 初始化 ----------
+renderOverview();renderPipe();renderDocs();renderHotToday();renderHotLib();
+renderInv();
+renderExpTabs();renderExpForm();renderExpList();
+renderReviews();bindReview();renderGuide("shoot");updateHotStat();initChat();
+
+// ---------- 手动刷新热点 ----------
+function openHotRefresh(){
+  const today=new Date().toISOString().slice(0,10);
+  $("#hotRefreshText").value="请帮我实时抓取今天（"+today+"）抖音和快手的可跟拍热点榜，剔除时政/军事/案件/涉外等敏感类，只保留 生活/美食/情感/娱乐/创作/搞笑 类。结合我网盘素材（对象的30张蔬菜静物+3张人像、我的视频），按 JSON 数组格式输出每条：{title, star(1-5契合度), heat(平台#位·热度·类型), type}。只返回 JSON 数组，不要其它文字。";
+  $("#hotImportText").value="";$("#hotImportMsg").textContent="";
+  $("#hotRefreshMask").classList.add("show");
+}
+function closeHotRefresh(){$("#hotRefreshMask").classList.remove("show");}
+function importHotToday(){
+  try{
+    const arr=JSON.parse($("#hotImportText").value.trim());
+    if(!Array.isArray(arr)||!arr.length){$("#hotImportMsg").textContent="格式不对：需要 JSON 数组。";return;}
+    const d={date:new Date().toISOString().slice(0,10),list:arr.map(x=>({title:String(x.title||""),star:x.star||0,heat:String(x.heat||""),type:String(x.type||"")}))};
+    saveHotToday(d);const hd=$("#hotDate");if(hd)hd.textContent=d.date;renderHotToday();
+    $("#hotImportMsg").textContent="✅ 已更新，共 "+d.list.length+" 条（"+d.date+"）。";
+  }catch(e){$("#hotImportMsg").textContent="❌ JSON 解析失败："+e.message;}
+}
+$("#hotRefreshBtn").onclick=openHotRefresh;
+$("#hotCopy").onclick=()=>{const t=$("#hotRefreshText");t.select();document.execCommand("copy");alert("已复制，去 AI 对话粘贴发送即可");};
+$("#hotImportBtn").onclick=importHotToday;
+$("#hotRefreshMask").onclick=e=>{if(e.target.id==="hotRefreshMask")closeHotRefresh();};
+
+</script>
+</body>
+</html>
